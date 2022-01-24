@@ -6,12 +6,14 @@
 - cargo test-bpf deposit_should_succeed
 - cargo test-bpf withdrawal_should_succeed
 
+(execute tests after another, since just running 'test-bpf' might throw errors)
+
 ## General Description
 
 The Light Protocol program verifies zkSNARK proofs to enable anonymous transactions on Solana. 
 
 An SDK will follow soon. Developers will be able to build solana-based programs on top of private transactions.
-If you're a developer interested in using or integrating with the program, reach out to us: [Discord community](https://discord.gg/WDAAaX6je2)  /  [Twitter](https://twitter.com/LightProtocol)
+If you're a developer interested in using or integrating with the program, reach out to us: [Discord community](https://discord.gg/WDAAaX6je2)  /  [Twitter](https://twitter.com/LightProtocol).
 
 
 
