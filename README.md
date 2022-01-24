@@ -18,7 +18,7 @@ If you're a developer interested in using or integrating with the program, reach
 
 
 Zero-knowledge proofs verify that the owner of recipient address B has deposited tokens to a shielded pool (similar to Zcash) from another address A before.
-The zero-knowledge proof includes meta data such as the recipient address. In case this data is tampered with the zero-knowledge proof becomes invalid and the withdrawal fails. Therefore, Light Protocol is completely trustless.
+Light Protocol is trustless: the zero-knowledge proof includes meta data such as the recipient address. If this data is tampered with the zero-knowledge proof becomes invalid and the withdrawal fails.
 
 ### Notes:
 - The implementation of the groth16_verifier is based on the arkworks libraries, mainly [ark_bn254](https://docs.rs/ark-bn254/0.3.0/ark_bn254/), [ark_ec](https://docs.rs/ark-ec/0.3.0/ark_ec/) and [ark_ff](https://docs.rs/ark-ff/0.3.0/ark_ff/).
