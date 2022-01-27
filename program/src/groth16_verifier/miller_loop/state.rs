@@ -154,6 +154,5 @@ impl Pack for MillerLoopState {
             }
         }
         *current_instruction_index_dst = usize::to_le_bytes(self.current_instruction_index);
-
     }
 }

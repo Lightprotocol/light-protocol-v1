@@ -3,8 +3,7 @@ use crate::utils::prepared_verifying_key::*;
 use ark_ec::{AffineCurve, ProjectiveCurve};
 use ark_ff::{
     fields::{Field, PrimeField},
-    BitIteratorBE, Fp256,
-    One
+    BitIteratorBE, Fp256, One,
 };
 // use ark_relations::r1cs::SynthesisError; // currently commented out, should implement manual error.
 use ark_std::Zero;
@@ -48,10 +47,11 @@ pub fn init_pairs_instruction(
         get_gamma_abc_g1_6(),
         get_gamma_abc_g1_7(),
     ];
-    if (public_inputs.len() + 1) != pvk_vk_gamma_abc_g1.len() { // 693
-         // TODO: add manual error throw.
-         // Err(SynthesisError::MalformedVerifyingKey);
-         panic!("MalformedVerifyingKey");
+    if (public_inputs.len() + 1) != pvk_vk_gamma_abc_g1.len() {
+        // 693
+        // TODO: add manual error throw.
+        // Err(SynthesisError::MalformedVerifyingKey);
+        panic!("MalformedVerifyingKey");
     }
 
     // inits g_ic into range.
@@ -85,7 +85,6 @@ pub fn init_pairs_instruction(
     parse_x_group_affine_to_bytes(x_vec[4], x_5_range); // 6k
     parse_x_group_affine_to_bytes(x_vec[5], x_6_range); // 6k
     parse_x_group_affine_to_bytes(x_vec[6], x_7_range); // 6k
-
 }
 
 // Initializes fresh res range. Called once for each bit at the beginning of each loop (256x).

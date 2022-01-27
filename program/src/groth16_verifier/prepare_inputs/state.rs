@@ -99,9 +99,7 @@ impl Pack for PrepareInputsState {
             proof_a_b_c_leaves_and_nullifiers,
         ) = array_refs![
             input, 1, 1, 1, 1, 32, 8, 32, 8, 32, 32, 32, 32, 8, 32, 64, 32, 64, 32, 64, 32, 64, 32,
-            64, 32, 64, 32, 64, 32, 32, 32, 32, 32, 32,
-            2432,
-            384
+            64, 32, 64, 32, 64, 32, 32, 32, 32, 32, 32, 2432, 384
         ];
 
         Ok(PrepareInputsState {
@@ -190,9 +188,7 @@ impl Pack for PrepareInputsState {
             proof_a_b_c_leaves_and_nullifiers_dst,
         ) = mut_array_refs![
             dst, 1, 1, 1, 1, 32, 8, 32, 8, 32, 32, 32, 32, 8, 32, 64, 32, 64, 32, 64, 32, 64, 32,
-            64, 32, 64, 32, 64, 32, 32, 32, 32, 32, 32,
-            2432,
-            384
+            64, 32, 64, 32, 64, 32, 32, 32, 32, 32, 32, 2432, 384
         ];
         for (i, var_has_changed) in self.changed_variables.iter().enumerate() {
             if *var_has_changed {
@@ -278,6 +274,5 @@ impl Pack for PrepareInputsState {
         if self.is_initialized {
             *is_initialized_dst = [1u8; 1];
         }
-
     }
 }

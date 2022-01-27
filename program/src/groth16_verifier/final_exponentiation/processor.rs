@@ -425,7 +425,6 @@ pub fn _process_instruction(
         custom_frobenius_map_3(&mut account_struct.y1_range);
         account_struct.changed_variables[Y1_RANGE_ITER] = true;
     } else if id == 121 {
-
         mul_assign_1(
             &account_struct.f1_r_range,
             &account_struct.f_f2_range,

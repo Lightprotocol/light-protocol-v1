@@ -7,7 +7,6 @@ use solana_program::{
 };
 use std::convert::TryInto;
 
-
 #[allow(unused_variables)]
 #[derive(Debug)]
 pub struct MerkleTree {

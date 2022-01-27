@@ -7,8 +7,8 @@ use ark_ec::ProjectiveCurve;
 use ark_ff::biginteger::BigInteger256;
 use ark_ff::Fp256;
 use ark_groth16::{prepare_inputs, prepare_verifying_key, verify_proof};
-use light_protocol_program::utils::{init_bytes18, prepared_verifying_key::*};
 use light_protocol_program::poseidon_merkle_tree::state::TmpStoragePda;
+use light_protocol_program::utils::{init_bytes18, prepared_verifying_key::*};
 
 use light_protocol_program::{
     groth16_verifier::{
@@ -735,7 +735,6 @@ async fn transact(
     Ok(())
 }
 
-
 async fn check_tmp_storage_account_state_correct(
     tmp_storage_pda_pubkey: &Pubkey,
     merkle_account_data_before: Option<&Vec<u8>>,
@@ -751,10 +750,7 @@ async fn check_tmp_storage_account_state_correct(
 
     let unpacked_tmp_storage_account =
         ChecksAndTransferState::unpack(&tmp_storage_account.data.clone()).unwrap();
-    assert_eq!(
-        unpacked_tmp_storage_account.current_instruction_index,
-        1502
-    );
+    assert_eq!(unpacked_tmp_storage_account.current_instruction_index, 1502);
 
     if merkle_account_data_after.is_some() {
         let merkle_tree_pda_after =
@@ -1853,7 +1849,6 @@ async fn signer_acc_not_in_first_place_should_not_succeed() {
         .process_transaction(transaction)
         .await
         .unwrap();
-
 
     /*
      *

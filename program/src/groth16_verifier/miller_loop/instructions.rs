@@ -14,7 +14,7 @@ use ark_ff::{
         Field, Fp2,
     },
     fp12_2over3over2::Fp12Parameters,
-    One, Zero
+    One, Zero,
 };
 use solana_program::msg;
 
@@ -29,7 +29,6 @@ pub fn doubling_step(
     coeff_1_range: &mut Vec<u8>,
     coeff_2_range: &mut Vec<u8>,
 ) {
-
     // step 0
     let mut r = parse_r_from_bytes(&r_bytes);
     // TODO: Check compute cost, if enough buffer remove.
@@ -39,7 +38,10 @@ pub fn doubling_step(
     //     10331104244869713732,
     //     2249375503248834476,
     // ]));
-    let two_inv = <ark_bn254::Fq2Parameters as Fp2Parameters>::Fp::one().double().inverse().unwrap();
+    let two_inv = <ark_bn254::Fq2Parameters as Fp2Parameters>::Fp::one()
+        .double()
+        .inverse()
+        .unwrap();
     let mut a = r.x * &r.y;
     a.mul_assign_by_fp(&two_inv);
     let b = r.y.square();
@@ -89,7 +91,6 @@ pub fn addition_step<B: BnParameters>(
     computation_flag: &str,
 ) {
     let mut q = parse_proof_b_from_bytes(proof_bytes);
-
 
     let twist_mul_by_q_x = ark_bn254::Parameters::TWIST_MUL_BY_Q_X;
 
@@ -713,7 +714,6 @@ pub fn ell_instruction_d_c3(
 
     parse_f_to_bytes(f, f_range); // cost: 15k
 }
-
 
 #[cfg(test)]
 mod tests {
