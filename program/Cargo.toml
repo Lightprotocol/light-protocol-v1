@@ -5,7 +5,7 @@ authors = ["ananas-block <jorrit@lightprotocol.com>", "swen <swen@lightprotocol.
 edition = "2018"
 
 [patch.crates-io]
-ark-ff = { git = "https://github.com/Lightprotocol/algebra", branch="release-0.3.0", default-features = false }
+ark-ff = { git = "https://github.com/Lightprotocol/algebra", branch="release-0.3.0" }
 ark-bn254 = {git = "https://github.com/Lightprotocol/curves", branch="release-0.3.0"}
 ark-ec = { git = "https://github.com/Lightprotocol/algebra", branch="release-0.3.0"}
 ark-serialize = { git = "https://github.com/Lightprotocol/algebra", branch="release-0.3.0"}
