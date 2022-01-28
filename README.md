@@ -3,10 +3,8 @@
 ## DISCLAIMER: THIS SOFTWARE IS NOT AUDITED. Do not use in production!
 
 ## Tests
-- cargo test-bpf deposit_should_succeed
-- cargo test-bpf withdrawal_should_succeed
-
-(execute tests after another, since just running 'test-bpf' might throw errors)
+- cd ./program && cargo test-bpf deposit_should_succeed
+- cd ./program && cargo test-bpf withdrawal_should_succeed
 
 ## General Description
 
