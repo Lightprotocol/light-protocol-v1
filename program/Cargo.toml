@@ -1,7 +1,7 @@
 [package]
 name = "light_protocol_program"
 version = "0.1.0"
-authors = ["ananas-block <flow23@protonmail.com>", "swen <swen.schaeferjohann@code.berlin>"]
+authors = ["ananas-block <jorrit@lightprotocol.com>", "swen <swen@lightprotocol.com>"]
 edition = "2018"
 
 [patch.crates-io]
