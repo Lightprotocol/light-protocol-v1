@@ -17,8 +17,6 @@ test-bpf = []
 [profile.test]
 opt-level = 2
 
-
-
 [dependencies]
 byteorder = "1.3"
 
@@ -28,26 +26,17 @@ arrayref = "0.3.6"
 borsh = "0.9.1"
 getrandom = { version = "0.2.2", features = ["custom"] }
 
-
-
 #crypto
 ark-crypto-primitives = { version = "^0.3.0", default-features = true, features = [ "r1cs" ] }
 ark-ff = { version = "^0.3.0", default-features = false }
-#ark-ff = { git = "https://github.com/Lightprotocol/algebra", branch="release-0.3.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false }
-#ark-bn254 = {git = "https://github.com/Lightprotocol/curves", branch="release-0.3.0"}
-#ark-ec = { git = "https://github.com/Lightprotocol/algebra", branch="release-0.3.0"}
 ark-ec = { version = "^0.3.0", default-features = false }
-
-
 ark-ed-on-bn254 = { version = "^0.3.0", features = ["r1cs"] }
-#ark-bn254 = "0.3.0"
 ark-std = { version = "^0.3.0", default-features = false }
 ark-relations = { version = "^0.3.0", default-features = false  }
 
 #poseidon
 arkworks-gadgets = "0.3.14"
-#arkworks-gadgets = { git = "https://github.com/Lightprotocol/arkworks-gadgets", branch="release-0.3.14" }
 
 [dev-dependencies]
 solana-program-test = "1.8.5"
