@@ -1,19 +1,8 @@
 use solana_program::{msg, program_error::ProgramError};
 
 use crate::poseidon_merkle_tree::state::{MerkleTree, TmpStoragePda};
-use crate::utils::init_bytes18::ZERO_BYTES_MERKLE_TREE_18;
-/*
-pub fn insert_0(leaf: &Vec<u8>, merkle_tree_account: &mut MerkleTree, tmp_storage_account:&mut TmpStoragePda) {
-    tmp_storage_account.current_index =  merkle_tree_account.next_index;
-    assert!(tmp_storage_account.current_index != 2048/*2usize^merkle_tree_account.levels*/, "Merkle tree is full. No more leaves can be added");
+use crate::utils::config::ZERO_BYTES_MERKLE_TREE_18;
 
-    tmp_storage_account.current_level_hash = leaf.clone();
-    merkle_tree_account.leaves = leaf.clone();
-
-
-    merkle_tree_account.inserted_leaf = true;
-}
-*/
 pub fn insert_0_double(
     merkle_tree_account: &mut MerkleTree,
     tmp_storage_account: &mut TmpStoragePda,
@@ -32,7 +21,6 @@ pub fn insert_0_double(
         tmp_storage_account.leaf_right
     );
 
-    //assert!(tmp_storage_account.current_index != 2048/*2usize^merkle_tree_account.levels*/, "Merkle tree is full. No more leaves can be added");
     if tmp_storage_account.current_index == 262144 {
         msg!("Merkle tree full");
         return Err(ProgramError::InvalidInstructionData);
@@ -73,8 +61,7 @@ pub fn insert_1_inner_loop(
         tmp_storage_account.left = tmp_storage_account.current_level_hash.clone();
         tmp_storage_account.right = ZERO_BYTES_MERKLE_TREE_18
             [tmp_storage_account.current_level * 32..(tmp_storage_account.current_level * 32 + 32)]
-            .to_vec()
-            .clone();
+            .to_vec();
         merkle_tree_account.filled_subtrees[tmp_storage_account.current_level] =
             tmp_storage_account.current_level_hash.clone();
     } else {

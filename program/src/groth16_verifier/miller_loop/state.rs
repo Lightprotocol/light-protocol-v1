@@ -1,5 +1,7 @@
+use crate::utils::config::{ENCRYPTED_UTXOS_LENGTH, TMP_STORAGE_ACCOUNT_TYPE};
 use arrayref::{array_mut_ref, array_ref, array_refs, mut_array_refs};
 use solana_program::{
+    msg,
     program_error::ProgramError,
     program_pack::{IsInitialized, Pack, Sealed},
 };
@@ -36,13 +38,14 @@ impl IsInitialized for MillerLoopState {
 }
 
 impl Pack for MillerLoopState {
-    const LEN: usize = 3900; // 1728;
+    const LEN: usize = 3900 + ENCRYPTED_UTXOS_LENGTH; // 1728;
 
     fn unpack_from_slice(input: &[u8]) -> Result<Self, ProgramError> {
         let input = array_ref![input, 0, MillerLoopState::LEN];
 
         let (
             _is_initialized,
+            account_type,
             _unused_constants0,
             signing_address,
             _unused_constants1,
@@ -63,8 +66,33 @@ impl Pack for MillerLoopState {
             current_coeff_3_range,
             _unused_remainder,
         ) = array_refs![
-            input, 1, 3, 32, 176, 8, 384, 64, 64, 64, 32, 32, 32, 32, 32, 32, 192, 128, 1, 1, 2590
+            input,
+            1,
+            1,
+            2,
+            32,
+            176,
+            8,
+            384,
+            64,
+            64,
+            64,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            192,
+            128,
+            1,
+            1,
+            2590 + ENCRYPTED_UTXOS_LENGTH
         ];
+        if account_type[0] != TMP_STORAGE_ACCOUNT_TYPE {
+            msg!("Wrong account type.");
+            return Err(ProgramError::InvalidArgument);
+        }
         Ok(MillerLoopState {
             is_initialized: true,
             signing_address: signing_address.to_vec(),
@@ -115,7 +143,27 @@ impl Pack for MillerLoopState {
             current_coeff_3_range_dst,
             _unused_remainder,
         ) = mut_array_refs![
-            dst, 1, 3, 32, 176, 8, 384, 64, 64, 64, 32, 32, 32, 32, 32, 32, 192, 128, 1, 1, 2590
+            dst,
+            1,
+            3,
+            32,
+            176,
+            8,
+            384,
+            64,
+            64,
+            64,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            192,
+            128,
+            1,
+            1,
+            2590 + ENCRYPTED_UTXOS_LENGTH
         ];
 
         for (i, var_has_changed) in self.changed_variables.iter().enumerate() {

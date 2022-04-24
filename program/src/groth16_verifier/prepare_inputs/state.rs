@@ -1,5 +1,7 @@
+use crate::utils::config::{ENCRYPTED_UTXOS_LENGTH, TMP_STORAGE_ACCOUNT_TYPE};
 use arrayref::{array_mut_ref, array_ref, array_refs, mut_array_refs};
 use solana_program::{
+    msg,
     program_error::ProgramError,
     program_pack::{IsInitialized, Pack, Sealed},
 };
@@ -9,16 +11,16 @@ use std::convert::TryInto;
 pub struct PrepareInputsState {
     is_initialized: bool,
     pub found_root: u8,
-    pub found_nullifier: u8,
-    pub executed_withdraw: u8,
+    pub account_type: u8,
+    pub merkle_tree_index: u8,
     pub signing_address: Vec<u8>, // is relayer address
-    pub relayer_refund: Vec<u8>,
-    pub to_address: Vec<u8>,
+    pub relayer_fee: Vec<u8>,
+    pub recipient: Vec<u8>,
     pub amount: Vec<u8>,
     pub nullifier_hash: Vec<u8>,
     pub root_hash: Vec<u8>,
-    pub data_hash: Vec<u8>,         // is commit hash until changed
-    pub tx_integrity_hash: Vec<u8>, // is calculated on-chain from to_address, amount, signing_address,
+    pub unused: Vec<u8>,
+    pub tx_integrity_hash: Vec<u8>, // is calculated on-chain from recipient, amount, signing_address,
 
     pub i_1_range: Vec<u8>,
     pub x_1_range: Vec<u8>,
@@ -55,23 +57,23 @@ impl IsInitialized for PrepareInputsState {
     }
 }
 impl Pack for PrepareInputsState {
-    const LEN: usize = 3900; // 1020
+    const LEN: usize = 3900 + ENCRYPTED_UTXOS_LENGTH; // 1020
 
     fn unpack_from_slice(input: &[u8]) -> Result<Self, ProgramError> {
         let input = array_ref![input, 0, PrepareInputsState::LEN];
 
         let (
             _is_initialized,
+            account_type,
             found_root,
-            found_nullifier,
-            executed_withdraw,
+            merkle_tree_index,
             signing_address, // is relayer address
-            relayer_refund,
-            to_address,
+            relayer_fee,
+            recipient,
             amount,
             nullifier_hash,
             root_hash,
-            data_hash, // is commit hash until changed
+            unused, // is commit hash until changed
             tx_integrity_hash,
             current_instruction_index,
             i_1_range, // 32b
@@ -98,23 +100,61 @@ impl Pack for PrepareInputsState {
             _unused_remainder,
             proof_a_b_c_leaves_and_nullifiers,
         ) = array_refs![
-            input, 1, 1, 1, 1, 32, 8, 32, 8, 32, 32, 32, 32, 8, 32, 64, 32, 64, 32, 64, 32, 64, 32,
-            64, 32, 64, 32, 64, 32, 32, 32, 32, 32, 32, 2432, 384
+            input,
+            1,
+            1,
+            1,
+            1,
+            32,
+            8,
+            32,
+            8,
+            32,
+            32,
+            32,
+            32,
+            8,
+            32,
+            64,
+            32,
+            64,
+            32,
+            64,
+            32,
+            64,
+            32,
+            64,
+            32,
+            64,
+            32,
+            64,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            2432,
+            384 + ENCRYPTED_UTXOS_LENGTH
         ];
 
+        if _is_initialized[0] != 0u8 && account_type[0] != TMP_STORAGE_ACCOUNT_TYPE {
+            msg!("Wrong account type.");
+            return Err(ProgramError::InvalidAccountData);
+        }
         Ok(PrepareInputsState {
             is_initialized: true,
 
             found_root: found_root[0],                     //0
-            found_nullifier: found_nullifier[0],           //1
-            executed_withdraw: executed_withdraw[0],       //2
+            account_type: account_type[0],                 //1
+            merkle_tree_index: merkle_tree_index[0],       //2
             signing_address: signing_address.to_vec(),     //3
-            relayer_refund: relayer_refund.to_vec(),       //4
-            to_address: to_address.to_vec(),               //5
+            relayer_fee: relayer_fee.to_vec(),             //4
+            recipient: recipient.to_vec(),                 //5
             amount: amount.to_vec(),                       //6
             nullifier_hash: nullifier_hash.to_vec(),       //7
             root_hash: root_hash.to_vec(),                 //8
-            data_hash: data_hash.to_vec(),                 //9
+            unused: unused.to_vec(),                       //9
             tx_integrity_hash: tx_integrity_hash.to_vec(), //10
             proof_a_b_c_leaves_and_nullifiers: proof_a_b_c_leaves_and_nullifiers.to_vec(), //11
 
@@ -150,16 +190,16 @@ impl Pack for PrepareInputsState {
         let (
             //constants
             is_initialized_dst,
+            _account_type_dst,
             found_root_dst,
-            found_nullifier_dst,
-            executed_withdraw_dst,
+            merkle_tree_index_dst,
             signing_address_dst, // is relayer address
-            relayer_refund_dst,
-            to_address_dst,
+            relayer_fee_dst,
+            recipient_dst,
             amount_dst,
             nullifier_hash_dst,
             root_hash_dst,
-            data_hash_dst,
+            unused_dst,
             tx_integrity_hash_dst,
             //variables
             current_instruction_index_dst,
@@ -187,8 +227,42 @@ impl Pack for PrepareInputsState {
             _unused_remainder_dst,
             proof_a_b_c_leaves_and_nullifiers_dst,
         ) = mut_array_refs![
-            dst, 1, 1, 1, 1, 32, 8, 32, 8, 32, 32, 32, 32, 8, 32, 64, 32, 64, 32, 64, 32, 64, 32,
-            64, 32, 64, 32, 64, 32, 32, 32, 32, 32, 32, 2432, 384
+            dst,
+            1,
+            1,
+            1,
+            1,
+            32,
+            8,
+            32,
+            8,
+            32,
+            32,
+            32,
+            32,
+            8,
+            32,
+            64,
+            32,
+            64,
+            32,
+            64,
+            32,
+            64,
+            32,
+            64,
+            32,
+            64,
+            32,
+            64,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            2432,
+            384 + ENCRYPTED_UTXOS_LENGTH
         ];
         for (i, var_has_changed) in self.changed_variables.iter().enumerate() {
             if *var_has_changed {
@@ -239,17 +313,17 @@ impl Pack for PrepareInputsState {
         for (i, const_has_changed) in self.changed_constants.iter().enumerate() {
             if *const_has_changed {
                 if i == 0 {
-                    *found_root_dst = [self.found_root.clone(); 1];
+                    *found_root_dst = [self.found_root; 1];
                 } else if i == 1 {
-                    *found_nullifier_dst = [self.found_nullifier.clone(); 1];
+                    //*account_type_dst = [self.account_type; 1];
                 } else if i == 2 {
-                    *executed_withdraw_dst = [self.executed_withdraw.clone(); 1];
+                    *merkle_tree_index_dst = [self.merkle_tree_index; 1];
                 } else if i == 3 {
                     *signing_address_dst = self.signing_address.clone().try_into().unwrap();
                 } else if i == 4 {
-                    *relayer_refund_dst = self.relayer_refund.clone().try_into().unwrap();
+                    *relayer_fee_dst = self.relayer_fee.clone().try_into().unwrap();
                 } else if i == 5 {
-                    *to_address_dst = self.to_address.clone().try_into().unwrap();
+                    *recipient_dst = self.recipient.clone().try_into().unwrap();
                 } else if i == 6 {
                     *amount_dst = self.amount.clone().try_into().unwrap();
                 } else if i == 7 {
@@ -257,7 +331,7 @@ impl Pack for PrepareInputsState {
                 } else if i == 8 {
                     *root_hash_dst = self.root_hash.clone().try_into().unwrap();
                 } else if i == 9 {
-                    *data_hash_dst = self.data_hash.clone().try_into().unwrap();
+                    *unused_dst = self.unused.clone().try_into().unwrap();
                 } else if i == 10 {
                     *tx_integrity_hash_dst = self.tx_integrity_hash.clone().try_into().unwrap();
                 } else if i == 11 {
@@ -270,7 +344,6 @@ impl Pack for PrepareInputsState {
             }
         }
         *current_instruction_index_dst = usize::to_le_bytes(self.current_instruction_index);
-        //TODO: remove, rn crashes if removed
         if self.is_initialized {
             *is_initialized_dst = [1u8; 1];
         }

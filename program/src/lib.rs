@@ -1,9 +1,12 @@
+#![allow(clippy::type_complexity, clippy::ptr_arg, clippy::too_many_arguments)]
+
 pub mod groth16_verifier;
 pub mod instructions;
 pub mod nullifier_state;
 pub mod poseidon_merkle_tree;
 pub mod processor;
 pub mod state;
+pub mod user_account;
 pub mod utils;
 
 use solana_program::{
@@ -14,16 +17,31 @@ use solana_program::{
     program_error::ProgramError,
     program_pack::Pack,
     pubkey::Pubkey,
+    sysvar::rent::Rent,
+    sysvar::Sysvar,
 };
+use solana_security_txt::security_txt;
 
+security_txt! {
+    name: "light_protocol_program",
+    project_url: "lightprotocol.com",
+    contacts: "email:security@lightprotocol.com",
+    policy: "https://github.com/Lightprotocol/light-protocol-program/blob/main/SECURITY.md",
+    source_code: "https://github.com/Lightprotocol/light-protocol-program"
+}
+
+use crate::config::{ENCRYPTED_UTXOS_LENGTH, MERKLE_TREE_INIT_AUTHORITY};
 use crate::groth16_verifier::groth16_processor::Groth16Processor;
 use crate::instructions::create_and_try_initialize_tmp_storage_pda;
 use crate::poseidon_merkle_tree::processor::MerkleTreeProcessor;
 use crate::state::InstructionIndex;
-use crate::utils::init_bytes18;
+use crate::user_account::instructions::initialize_user_account;
+use crate::utils::config;
 
+#[cfg(not(feature = "no-entrypoint"))]
 entrypoint!(process_instruction);
 
+#[allow(clippy::clone_double_ref)]
 pub fn process_instruction(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
@@ -37,20 +55,39 @@ pub fn process_instruction(
         msg!("signer account needs to be passed in first place");
         return Err(ProgramError::IllegalOwner);
     }
-    //TODO: replace if else with enum
     // Initialize new merkle tree account.
     if _instruction_data.len() >= 9 && _instruction_data[8] == 240 {
         let merkle_tree_storage_acc = next_account_info(account)?;
-
+        // Check whether signer is merkle_tree_init_authority.
+        if *signer_account.key != Pubkey::new(&MERKLE_TREE_INIT_AUTHORITY) {
+            msg!("Signer is not merkle tree init authority.");
+            return Err(ProgramError::IllegalOwner);
+        }
+        let rent_sysvar_info = next_account_info(account)?;
+        let rent = &Rent::from_account_info(rent_sysvar_info)?;
+        if !rent.is_exempt(
+            **merkle_tree_storage_acc.lamports.borrow(),
+            merkle_tree_storage_acc.data.borrow().len(),
+        ) {
+            msg!("Account is not rent exempt.");
+            return Err(ProgramError::AccountNotRentExempt);
+        }
         let mut merkle_tree_processor =
-            MerkleTreeProcessor::new(None, Some(merkle_tree_storage_acc))?;
+            MerkleTreeProcessor::new(None, Some(merkle_tree_storage_acc), *program_id)?;
         merkle_tree_processor
-            .initialize_new_merkle_tree_from_bytes(&init_bytes18::INIT_BYTES_MERKLE_TREE_18[..])
+            .initialize_new_merkle_tree_from_bytes(&config::INIT_BYTES_MERKLE_TREE_18[..])
+    }
+    // Initialize new onchain user account.
+    else if _instruction_data.len() >= 9 && _instruction_data[8] == 100 {
+        let user_account = next_account_info(account)?;
+        let rent_sysvar_info = next_account_info(account)?;
+        let rent = &Rent::from_account_info(rent_sysvar_info)?;
+        initialize_user_account(user_account, *signer_account.key, *rent)
     }
     // Transact with shielded pool.
-    // This instruction has to be called 1503 times to perform all computation.
-    // There are many types of instructions which have to be executed in a specific order.
-    // The instruction order is hardcode in IX_ORDER.
+    // This instruction has to be called 1502 times to perform all computation.
+    // There are different instructions which have to be executed in a specific order.
+    // The instruction order is hardcoded in IX_ORDER.
     // After every instruction the program increments an internal counter (current_instruction_index).
     // The current_instruction_index is stored in a temporary storage pda on-chain.
     else {
@@ -59,11 +96,12 @@ pub fn process_instruction(
 
         // Unpack the current_instruction_index.
         let tmp_storage_pda_data = InstructionIndex::unpack(&tmp_storage_pda.data.borrow());
-
+        msg!("tmp_storage_pda_data: {:?}", tmp_storage_pda_data);
         // Check whether tmp_storage_pda is initialized, if not try create and initialize.
         // First instruction will always create and initialize a new tmp_storage_pda.
         match tmp_storage_pda_data {
-            Err(_) => {
+            Err(ProgramError::InvalidAccountData) => {
+                // Will enter here the first iteration because the account does not exist.
                 // Creates a tmp_storage_pda to store state while verifying the zero-knowledge proof and
                 // updating the merkle tree.
                 // All data used during computation is passed in as instruction_data with this instruction.
@@ -85,36 +123,35 @@ pub fn process_instruction(
                 create_and_try_initialize_tmp_storage_pda(
                     program_id,
                     accounts,
-                    3900u64,                 // bytes
-                    0_u64,                   // lamports
-                    true,                    // rent_exempt
+                    3900u64 + ENCRYPTED_UTXOS_LENGTH as u64, // bytes
+                    0_u64,                                   // lamports
+                    true,                                    // rent_exempt
                     &_instruction_data[9..], // Data starts after instruction identifier.
                 )
             }
-
+            Err(_) => Err(ProgramError::InvalidInstructionData),
             Ok(tmp_storage_pda_data) => {
                 // Check signer before starting a compute instruction.
-                //TODO enforce exact instruction data length
                 if tmp_storage_pda_data.signer_pubkey != *signer_account.key {
-                    msg!("wrong signer");
-                    return Err(ProgramError::IllegalOwner);
+                    msg!("Wrong signer.");
+                    Err(ProgramError::IllegalOwner)
+                } else if *program_id != *tmp_storage_pda.owner {
+                    msg!(
+                        "Wrong owner. {:?} != {:?}",
+                        *program_id,
+                        *tmp_storage_pda.owner
+                    );
+                    Err(ProgramError::IllegalOwner)
                 } else {
                     msg!(
                         "current ix index: {}",
                         tmp_storage_pda_data.current_instruction_index
                     );
-                    // TODO: replace if else with enum for better readibility
+                    // *ROOT_CHECK:*
                     // Checks whether root exists in Merkle tree history vec.
                     // Accounts:
                     // 2. `[]` Merkle tree
-                    if tmp_storage_pda_data.current_instruction_index == ROOT_CHECK {
-                        processor::process_instruction(
-                            program_id,
-                            accounts,
-                            tmp_storage_pda_data.current_instruction_index,
-                        )?;
-                        Ok(())
-                    }
+                    // *INSERT_LEAVES_NULLIFIER_AND_TRANSFER:*
                     // Inserts leaves, inserts nullifier, updates Merkle tree root and transfers
                     // funds to the recipient.
                     // For deposits the recipient is the merkle_tree_pda. For withdrawals the passed
@@ -126,10 +163,17 @@ pub fn process_instruction(
                     // 4. `[writable]` nullifier0_pda
                     // 5. `[writable]` nullifier1_pda
                     // 6. `[writable]` merkle_tree_pda
-                    // 7. `[]` spl_program
-                    // 8. `[]` recipient
-                    else if tmp_storage_pda_data.current_instruction_index
-                        == INSERT_LEAVES_NULLIFIER_AND_TRANSFER
+                    // 7. `[writable]` merkle_tree_pda_token
+                    // 8. `[]` spl_program
+                    // 9. `[]` token_program_account
+                    // 10. `[]` rent_sysvar_info
+                    // 11. `[]` authority
+                    // 12. `[writable]` user_pda_token
+                    // 13. `[writable]` relayer_pda_token
+
+                    if tmp_storage_pda_data.current_instruction_index == ROOT_CHECK
+                        || tmp_storage_pda_data.current_instruction_index
+                            == INSERT_LEAVES_NULLIFIER_AND_TRANSFER
                     {
                         processor::process_instruction(
                             program_id,
@@ -159,7 +203,7 @@ pub fn process_instruction(
                         >= VERIFICATION_END_INDEX
                     {
                         let mut merkle_tree_processor =
-                            MerkleTreeProcessor::new(Some(tmp_storage_pda), None)?;
+                            MerkleTreeProcessor::new(Some(tmp_storage_pda), None, *program_id)?;
                         merkle_tree_processor.process_instruction(accounts)?;
                         Ok(())
                     } else {
@@ -174,6 +218,11 @@ pub fn process_instruction(
 const ROOT_CHECK: usize = 1;
 const INSERT_LEAVES_NULLIFIER_AND_TRANSFER: usize = 1501;
 const VERIFICATION_END_INDEX: usize = 1266;
+pub const NULLIFIER_0_START: usize = 320;
+pub const NULLIFIER_0_END: usize = 352;
+pub const NULLIFIER_1_START: usize = 352;
+pub const NULLIFIER_1_END: usize = 384;
+pub const TWO_LEAVES_PDA_SIZE: u64 = 106 + ENCRYPTED_UTXOS_LENGTH as u64;
 //instruction order
 pub const IX_ORDER: [u8; 1502] = [
     //init data happens before this array starts

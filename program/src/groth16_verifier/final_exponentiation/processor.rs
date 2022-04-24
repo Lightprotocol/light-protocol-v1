@@ -14,7 +14,7 @@ use solana_program::program_error::ProgramError;
 
 // processes instructions to compute final exponentiation analogue to
 // https://docs.rs/ark-ec/0.3.0/src/ark_ec/models/bn/mod.rs.html#151-211
-// for a detailed test see tests/fe_offchain_test.rs
+// for a detailed test see tests/offchain_final_exponentiation.rs
 
 pub fn _process_instruction(
     account_struct: &mut FinalExponentiationState,
@@ -25,7 +25,7 @@ pub fn _process_instruction(
         account_struct.f1_r_range = account_struct.f_f2_range.clone();
         //Zero out y6_range for proof data was stored in this range for miller loop.
         let zeros = vec![0u8; 384];
-        account_struct.y6_range = zeros.clone();
+        account_struct.y6_range = zeros;
         conjugate_wrapper(&mut account_struct.f1_r_range);
         account_struct.changed_variables[F2_R_RANGE_ITER] = true;
         account_struct.changed_variables[F_F2_RANGE_ITER] = true;

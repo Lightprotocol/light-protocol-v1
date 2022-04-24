@@ -30,8 +30,8 @@ impl<'a, 'b> Groth16Processor<'a, 'b> {
         current_instruction_index: usize,
     ) -> Result<Self, ProgramError> {
         Ok(Groth16Processor {
-            main_account: main_account,
-            current_instruction_index: current_instruction_index,
+            main_account,
+            current_instruction_index,
         })
     }
     // The groth16 verifier verifies proofs for the Groth16 zkSNARK construction that's used by Light Protocol.
@@ -40,7 +40,7 @@ impl<'a, 'b> Groth16Processor<'a, 'b> {
     // The current implemenation relies on a 200k compute budget ix-wide. With that, the Groth16 processor currently processes
     // 1k+ ix calls for a single proof verification. The call order is hardcoded on-chain as [IX_ORDER].
     // There are some caveats that come with maintaining state across all those instructions, hence the increased code complexity.
-    // TODO: Adapt for v1.9 1M ix-wide budget?
+
     pub fn process_instruction_groth16_verifier(&mut self) -> Result<(), ProgramError> {
         if self.current_instruction_index < PREPARE_INPUTS_END_INDEX {
             self.prepare_inputs()?;
@@ -71,7 +71,7 @@ impl<'a, 'b> Groth16Processor<'a, 'b> {
             IX_ORDER[current_instruction_index],
             &mut account_data,
             usize::from(CURRENT_INDEX_ARRAY[current_instruction_index - 1]),
-        );
+        )?;
 
         account_data.current_instruction_index += 1;
         PrepareInputsState::pack_into_slice(
@@ -115,7 +115,7 @@ impl<'a, 'b> Groth16Processor<'a, 'b> {
             miller_loop::processor::move_proofs(
                 &mut main_account_data,
                 &account_prepare_inputs_data,
-            );
+            )?;
 
             parse_fp256_to_bytes(p2.0.x, &mut main_account_data.p_2_x_range);
             parse_fp256_to_bytes(p2.0.y, &mut main_account_data.p_2_y_range);
@@ -128,14 +128,14 @@ impl<'a, 'b> Groth16Processor<'a, 'b> {
                 &main_account_data,
                 &mut self.main_account.data.borrow_mut(),
             );
-            return Ok(());
+            Ok(())
         } else {
             // main processor after 1st ix (0).
 
             miller_loop::processor::_process_instruction(
                 IX_ORDER[main_account_data.current_instruction_index],
                 &mut main_account_data,
-            );
+            )?;
             main_account_data.current_instruction_index += 1;
 
             MillerLoopState::pack_into_slice(
@@ -154,7 +154,7 @@ impl<'a, 'b> Groth16Processor<'a, 'b> {
             IX_ORDER[self.current_instruction_index],
         )?;
 
-        if self.current_instruction_index == 1266 {
+        if self.current_instruction_index == FINAL_EXPONENTIATION_END_INDEX - 1 {
             verify_result(&main_account_data)?;
         }
         main_account_data.current_instruction_index += 1;
@@ -168,7 +168,6 @@ impl<'a, 'b> Groth16Processor<'a, 'b> {
     pub fn try_initialize(&mut self, _instruction_data: &[u8]) -> Result<(), ProgramError> {
         let mut main_account_data = PrepareInputsState::unpack(&self.main_account.data.borrow())?;
 
-        //TODO: add unpack struct for _instruction_data
         // get public_inputs from _instruction_data.
         //root
         let input1 =
@@ -223,7 +222,7 @@ impl<'a, 'b> Groth16Processor<'a, 'b> {
             &mut main_account_data.g_ic_x_range,
             &mut main_account_data.g_ic_y_range,
             &mut main_account_data.g_ic_z_range,
-        );
+        )?;
         let indices: [usize; 17] = [
             I_1_RANGE_INDEX,
             X_1_RANGE_INDEX,
