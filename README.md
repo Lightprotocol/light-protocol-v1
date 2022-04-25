@@ -30,7 +30,7 @@ We keep state in four types of accounts, a large persistent account for a sparse
 ### Security:
 
 Light Protocol has been audited at commit 5a79cdff5e9ea4d621b5d50be16d938124b24723.
-Read the [audit report here](https://github.com/Lightprotocol/program/Audit/Light Protocol Audit Report.pdf).
+Read the [audit report here](https://github.com/Lightprotocol/light-protocol-program/blob/main/Audit/Light%20Protocol%20Audit%20Report.pdf).
 A follow up audit for recent program modifications to improve UX will follow soon.
 
 ### Notes:
