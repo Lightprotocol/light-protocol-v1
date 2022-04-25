@@ -238,10 +238,13 @@ pub fn close_account(
 ) -> Result<(), ProgramError> {
     //close account by draining lamports
     let dest_starting_lamports = dest_account.lamports();
+    msg!("dest_starting_lamports {}", dest_starting_lamports);
     **dest_account.lamports.borrow_mut() = dest_starting_lamports
         .checked_add(account.lamports())
         .ok_or(ProgramError::InvalidAccountData)?;
     **account.lamports.borrow_mut() = 0;
+    msg!("dest_ending_lamports {}", dest_account.lamports());
+
     Ok(())
 }
 

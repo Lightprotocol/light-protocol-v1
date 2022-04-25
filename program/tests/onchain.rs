@@ -1305,7 +1305,7 @@ async fn deposit_should_succeed() {
     );
     assert_eq!(
         merkle_tree_pda_token_account.lamports,
-        amount + 2 * Rent::minimum_balance(&solana_sdk::sysvar::rent::Rent::default(), 0)
+        amount + 1 * Rent::minimum_balance(&solana_sdk::sysvar::rent::Rent::default(), 0)
     );
 
     let merkle_tree_account_data = program_context
@@ -2107,7 +2107,7 @@ async fn deposit_with_wrong_amount_should_not_succeed() {
     );
     assert_eq!(
         merkle_tree_pda_token_account.lamports,
-        amount + 2 * Rent::minimum_balance(&solana_sdk::sysvar::rent::Rent::default(), 0)
+        amount + 1 * Rent::minimum_balance(&solana_sdk::sysvar::rent::Rent::default(), 0)
     );
 }
 

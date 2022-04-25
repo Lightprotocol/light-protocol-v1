@@ -176,7 +176,7 @@ pub fn process_instruction(
                         &tmp_storage_pda.key.to_bytes(),
                         &b"escrow"[..],
                         0,                                                    //bytes
-                        <u64 as TryFrom<i64>>::try_from(ext_amount).unwrap(), // amount
+                        <u64 as TryFrom<i64>>::try_from(ext_amount).unwrap() - rent.minimum_balance(0), // amount
                         true,                                                 //rent_exempt
                     )?;
                     // Close escrow account to make deposit to shielded pool.
