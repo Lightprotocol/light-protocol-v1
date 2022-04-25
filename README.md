@@ -1,5 +1,8 @@
 # Light Protocol
 
+This is the Light Protocol repository. For the deployed code see the deploy branch
+which features the right config file and a non-rentexempt temporary storage account to save costs.
+
 ## Tests
 - cargo test-bpf deposit_should_succeed
 - cargo test-bpf withdrawal_should_succeed
