@@ -175,9 +175,10 @@ pub fn process_instruction(
                         rent,
                         &tmp_storage_pda.key.to_bytes(),
                         &b"escrow"[..],
-                        0,                                                    //bytes
-                        <u64 as TryFrom<i64>>::try_from(ext_amount).unwrap() - rent.minimum_balance(0), // amount
-                        true,                                                 //rent_exempt
+                        0, //bytes
+                        <u64 as TryFrom<i64>>::try_from(ext_amount).unwrap()
+                            - rent.minimum_balance(0), // amount
+                        true, //rent_exempt
                     )?;
                     // Close escrow account to make deposit to shielded pool.
                     close_account(user_pda_token, merkle_tree_pda_token)?;
