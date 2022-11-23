@@ -22,6 +22,7 @@ use solana_program::{
 };
 use solana_security_txt::security_txt;
 
+#[cfg(not(feature = "no-entrypoint"))]
 security_txt! {
     name: "light_protocol_program",
     project_url: "lightprotocol.com",
